@@ -407,7 +407,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   sftpTransferPanelVisible: false,
   customTerminalThemes: [],
   defaultLocalShell: '',
-  tabCloseButton: 'left',
+  tabCloseButton: 'right',
   showTabShortcutHints: true,
   hostListMenuStyle: 'button',
   sidebarTabs: { ...SIDEBAR_TAB_DEFAULTS },
