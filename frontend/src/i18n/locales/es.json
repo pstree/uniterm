@@ -1202,6 +1202,7 @@
   "shortcut.openSettings": "Abrir configuración",
   "shortcut.copy": "Copiar en terminal",
   "shortcut.paste": "Pegar en terminal",
+  "shortcut.terminalInterrupt": "Interrumpir en el terminal",
   "shortcut.toggleLineNumbers": "Alternar números de línea",
   "shortcut.toggleTimestamps": "Alternar marcas de tiempo",
   "shortcut.zoomFontIn": "Aumentar el tamaño de letra del terminal",

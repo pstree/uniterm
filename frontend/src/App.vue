@@ -1163,6 +1163,12 @@ const actionHandlers: Record<ShortcutAction, () => void> = {
     const pid = tabStore.getActivePanelId()
     if (pid) window.dispatchEvent(new CustomEvent('terminal:paste', { detail: { panelId: pid } }))
   },
+  terminalInterrupt: () => {
+    // Sends the interrupt control character (^C) to the focused session; the
+    // active panel resolves it (BaseTerminal), default Ctrl+C.
+    const pid = tabStore.getActivePanelId()
+    if (pid) window.dispatchEvent(new CustomEvent('terminal:interrupt', { detail: { panelId: pid } }))
+  },
   navigatePrev: () => navigatePanel(-1),
   navigateNext: () => navigatePanel(1),
   openSettings: () => openSettings(),

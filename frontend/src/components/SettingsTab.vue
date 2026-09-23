@@ -1360,7 +1360,7 @@ import SkillsManager from './SkillsManager.vue'
 import CommandsManager from './CommandsManager.vue'
 import type { AIModelConfig, ShortcutAction, KeyBinding, KeyboardSettings } from '../types/settings'
 import { useTerminalThemeOptions } from '../composables/useTerminalThemeOptions'
-import { uninstallGlobalListener, installGlobalListener, formatKeyBinding, digitModifierCollides, digitModifierFlagsEqual, TAB_DEFAULT_FLAGS, PANEL_DEFAULT_FLAGS, setRebinding } from '../composables/useKeyboardShortcuts'
+import { uninstallGlobalListener, installGlobalListener, formatKeyBinding, digitModifierCollides, digitModifierFlagsEqual, TAB_DEFAULT_FLAGS, PANEL_DEFAULT_FLAGS, setRebinding, CTRL_ONLY_ACTIONS } from '../composables/useKeyboardShortcuts'
 import AddRepoDialog from './AddRepoDialog.vue'
 import EditRepoDialog from './EditRepoDialog.vue'
 import ChangePasswordDialog from './ChangePasswordDialog.vue'
@@ -1744,14 +1744,18 @@ const shortcutCategories: { key: string; label: string; actions: ShortcutAction[
   {
     key: 'terminal',
     label: 'shortcut.catTerminal',
-    actions: ['focusTerminal', 'copy', 'paste', 'terminalSearch', 'zoomFontIn', 'zoomFontOut', 'toggleLineNumbers', 'toggleTimestamps'],
+    actions: ['focusTerminal', 'copy', 'paste', 'terminalInterrupt', 'terminalSearch', 'zoomFontIn', 'zoomFontOut', 'toggleLineNumbers', 'toggleTimestamps'],
   },
 ]
+
+// Bindings that only fire on the physical Ctrl key (never mirrored to Cmd on
+// macOS): rendered as ⌃ instead of ⌘ so the row matches what actually works.
+const literalCtrlActions = new Set<ShortcutAction>(CTRL_ONLY_ACTIONS)
 
 function bindingDisplay(action: ShortcutAction): string {
   const b = settingsStore.settings.keyboard[action]
   if (!b) return ''
-  return formatKeyBinding(b, isMac.value)
+  return formatKeyBinding(b, isMac.value, literalCtrlActions.has(action))
 }
 
 function isDefaultBinding(action: ShortcutAction): boolean {

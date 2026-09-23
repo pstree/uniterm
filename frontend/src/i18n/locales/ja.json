@@ -1202,6 +1202,7 @@
   "shortcut.openSettings": "設定を開く",
   "shortcut.copy": "ターミナル内コピー",
   "shortcut.paste": "ターミナル内貼り付け",
+  "shortcut.terminalInterrupt": "ターミナル内で中断",
   "shortcut.toggleLineNumbers": "行番号表示の切り替え",
   "shortcut.toggleTimestamps": "時間表示の切り替え",
   "shortcut.zoomFontIn": "ターミナルのフォントを拡大",

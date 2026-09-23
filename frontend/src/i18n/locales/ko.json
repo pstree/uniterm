@@ -1202,6 +1202,7 @@
   "shortcut.openSettings": "설정 열기",
   "shortcut.copy": "터미널 내 복사",
   "shortcut.paste": "터미널 내 붙여넣기",
+  "shortcut.terminalInterrupt": "터미널 내 중단",
   "shortcut.toggleLineNumbers": "줄 번호 표시 전환",
   "shortcut.toggleTimestamps": "시간 표시 전환",
   "shortcut.zoomFontIn": "터미널 글꼴 크게",

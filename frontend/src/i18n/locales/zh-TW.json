@@ -1202,6 +1202,7 @@
   "shortcut.openSettings": "開啟設定",
   "shortcut.copy": "終端內複製",
   "shortcut.paste": "終端內貼上",
+  "shortcut.terminalInterrupt": "終端內中斷",
   "shortcut.toggleLineNumbers": "切換行號顯示",
   "shortcut.toggleTimestamps": "切換時間顯示",
   "shortcut.zoomFontIn": "放大終端字體",

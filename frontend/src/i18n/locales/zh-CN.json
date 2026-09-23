@@ -1202,6 +1202,7 @@
   "shortcut.openSettings": "打开设置",
   "shortcut.copy": "终端内复制",
   "shortcut.paste": "终端内粘贴",
+  "shortcut.terminalInterrupt": "终端内中断",
   "shortcut.toggleLineNumbers": "切换行号显示",
   "shortcut.toggleTimestamps": "切换时间显示",
   "shortcut.zoomFontIn": "放大终端字体",

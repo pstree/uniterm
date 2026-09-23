@@ -1202,6 +1202,7 @@
   "shortcut.openSettings": "Открыть настройки",
   "shortcut.copy": "Копировать в терминале",
   "shortcut.paste": "Вставить в терминале",
+  "shortcut.terminalInterrupt": "Прервать в терминале",
   "shortcut.toggleLineNumbers": "Переключить номера строк",
   "shortcut.toggleTimestamps": "Переключить время",
   "shortcut.zoomFontIn": "Увеличить размер шрифта терминала",

@@ -155,6 +155,7 @@ export type ShortcutAction =
   | 'openSettings'
   | 'copy'
   | 'paste'
+  | 'terminalInterrupt'
   | 'toggleLineNumbers'
   | 'toggleTimestamps'
   | 'zoomFontIn'
@@ -206,6 +207,7 @@ export const SHORTCUT_LABELS: Record<ShortcutAction, string> = {
   openSettings: 'shortcut.openSettings',
   copy: 'shortcut.copy',
   paste: 'shortcut.paste',
+  terminalInterrupt: 'shortcut.terminalInterrupt',
   toggleLineNumbers: 'shortcut.toggleLineNumbers',
   toggleTimestamps: 'shortcut.toggleTimestamps',
   zoomFontIn: 'shortcut.zoomFontIn',
@@ -230,6 +232,10 @@ export const DEFAULT_KEYBOARD: KeyboardSettings = {
   openSettings: { ctrl: true, shift: false, alt: false, key: ',' },
   copy: { ctrl: true, shift: true, alt: false, key: 'c' },
   paste: { ctrl: true, shift: true, alt: false, key: 'v' },
+  // Terminal interrupt (SIGINT / ^C). Ctrl-only on purpose: this is a control
+  // character sent to the remote shell, not a menu accelerator, so it stays on
+  // the physical Ctrl key on macOS instead of mirroring to Cmd+C (copy).
+  terminalInterrupt: { ctrl: true, shift: false, alt: false, key: 'c' },
   toggleLineNumbers: { ctrl: true, shift: true, alt: false, key: 'g' },
   toggleTimestamps: { ctrl: true, shift: true, alt: false, key: 't' },
   zoomFontIn: { ctrl: true, shift: false, alt: false, key: '=' },

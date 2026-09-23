@@ -1202,6 +1202,7 @@
   "shortcut.openSettings": "Einstellungen öffnen",
   "shortcut.copy": "Im Terminal kopieren",
   "shortcut.paste": "Im Terminal einfügen",
+  "shortcut.terminalInterrupt": "Im Terminal abbrechen",
   "shortcut.toggleLineNumbers": "Zeilennummern umschalten",
   "shortcut.toggleTimestamps": "Zeitstempel umschalten",
   "shortcut.zoomFontIn": "Terminalschrift vergrößern",
