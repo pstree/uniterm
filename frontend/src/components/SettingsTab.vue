@@ -228,6 +228,32 @@
             </div>
           </div>
 
+          <!-- The bottom bar is desktop-only (the phone layout gives the bottom
+               edge to the soft-keyboard bar), so the card is hidden there. -->
+          <div v-if="!isMobile" class="setting-card">
+            <div class="setting-info">
+              <div class="setting-title">{{ t('settings.bottomBarTabs') }}</div>
+              <div class="setting-desc">{{ t('settings.bottomBarTabsDesc') }}</div>
+            </div>
+            <div class="setting-control">
+              <el-select
+                v-model="visibleBottomBarTabs"
+                multiple
+                collapse-tags
+                :collapse-tags-limit="3"
+                @change="onBottomBarTabsChange"
+              >
+                <!-- Same view ids as the left sidebar; "connections" is fixed. -->
+                <el-option
+                  v-for="tab in SIDEBAR_TAB_ORDER.filter(tab => tab.key !== 'connections')"
+                  :key="tab.key"
+                  :label="t(tab.labelKey)"
+                  :value="tab.key"
+                />
+              </el-select>
+            </div>
+          </div>
+
           </div>
 
         <h2 class="section-title">{{ t('settings.interaction') }}</h2>
@@ -1352,7 +1378,7 @@ import { useLocalStateStore } from '../stores/localStateStore'
 import { useUpdateCheck } from '../composables/useUpdateCheck'
 import { useI18n, locale } from '../i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { FONT_OPTIONS, FONT_WEIGHT_OPTIONS, LANGUAGE_OPTIONS, DEFAULT_KEYBOARD, DEFAULT_SETTINGS, SHORTCUT_LABELS, USER_AGENT_PRESETS, FOLLOW_APP_THEME, CURSOR_STYLES, TIMESTAMP_FORMATS, SIDEBAR_TAB_ORDER, SIDEBAR_TAB_DEFAULTS } from '../types/settings'
+import { FONT_OPTIONS, FONT_WEIGHT_OPTIONS, LANGUAGE_OPTIONS, DEFAULT_KEYBOARD, DEFAULT_SETTINGS, SHORTCUT_LABELS, USER_AGENT_PRESETS, FOLLOW_APP_THEME, CURSOR_STYLES, TIMESTAMP_FORMATS, SIDEBAR_TAB_ORDER, SIDEBAR_TAB_DEFAULTS, BOTTOM_BAR_TAB_DEFAULTS } from '../types/settings'
 import { formatFontFamily, normalizeFontFamilyValue } from '../utils/formatFontFamily'
 import { backendErrorText } from '../utils/backendError'
 import { getShellLabel as getShellLabelBase } from '../utils/shellLabel'
@@ -2190,6 +2216,25 @@ const visibleSidebarTabs = computed<string[]>({
   },
 })
 function onSidebarTabsChange() {
+  settingsStore.save()
+}
+
+// ── Bottom bar tab visibility ──
+// Same shape as the left sidebar card above: a multi-select over the view ids,
+// excluding the fixed "connections" view. Drives the bottom bar's own tab strip.
+const visibleBottomBarTabs = computed<string[]>({
+  get: () => SIDEBAR_TAB_ORDER
+    .map(tab => tab.key)
+    .filter(key => key !== 'connections')
+    .filter(key => settingsStore.settings.bottomBarTabs?.[key] ?? BOTTOM_BAR_TAB_DEFAULTS[key] ?? true),
+  set: (keys: string[]) => {
+    const tabs = settingsStore.settings.bottomBarTabs
+    for (const tab of SIDEBAR_TAB_ORDER) {
+      tabs[tab.key] = tab.key === 'connections' || keys.includes(tab.key)
+    }
+  },
+})
+function onBottomBarTabsChange() {
   settingsStore.save()
 }
 function openTunnelDialog(t?: Tunnel) {

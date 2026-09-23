@@ -2,18 +2,26 @@
   <div
     ref="sidebarEl"
     class="sidebar"
-    :class="{ collapsed: !visible, resizing: isResizing }"
-    :style="{ width: sidebarWidth + 'px' }"
+    :class="[
+      variant === 'bottom' ? 'sidebar-bottom' : 'sidebar-left',
+      { collapsed: !visible && variant === 'left', resizing: isResizing },
+    ]"
+    :style="variant === 'bottom' ? undefined : { width: sidebarWidth + 'px' }"
   >
-    <div class="resize-handle" @mousedown="onResizeStart" />
+    <div v-if="variant === 'left'" class="resize-handle" @mousedown="onResizeStart" />
     <div class="sidebar-header" @contextmenu.prevent="onTabStripContextMenu">
-      <button class="sidebar-tab" :class="{ active: activeView === 'connections' }" @click="activeView = 'connections'" :title="t('header.connections')"><el-icon><Network :size="'0.875rem'" /></el-icon></button>
-      <button v-if="tabVisible('files')" class="sidebar-tab" :class="{ active: activeView === 'files' }" @click="onFilesTabClick" :title="t('header.files')"><el-icon><FolderTree :size="'0.875rem'" /></el-icon></button>
-      <button v-if="tabVisible('monitor')" class="sidebar-tab" :class="{ active: activeView === 'monitor' }" @click="onMonitorTabClick" :title="t('header.monitor')"><el-icon><Activity :size="'0.875rem'" /></el-icon></button>
-      <button v-if="tabVisible('tunnels')" class="sidebar-tab" :class="{ active: activeView === 'tunnels' }" @click="activeView = 'tunnels'" :title="t('tunnels.tunnelsTab')"><el-icon><ArrowRightLeft :size="'0.875rem'" /></el-icon></button>
-      <button v-if="tabVisible('quickCommands')" class="sidebar-tab" :class="{ active: activeView === 'quickCommands' }" @click="activeView = 'quickCommands'" :title="quickCommandsTitle"><el-icon><Zap :size="'0.875rem'" /></el-icon></button>
-      <button v-if="tabVisible('history')" class="sidebar-tab" :class="{ active: activeView === 'history' }" @click="activeView = 'history'" :title="t('quickCommands.historyTab')"><el-icon><Clock :size="'0.875rem'" /></el-icon></button>
-      <button v-if="tabVisible('personalization')" class="sidebar-tab" :class="{ active: activeView === 'personalization' }" @click="activeView = 'personalization'" :title="t('sidebar.personalization')"><el-icon><Palette :size="'0.875rem'" /></el-icon></button>
+      <button
+        v-for="tab in tabDefs"
+        :key="tab.key"
+        class="sidebar-tab"
+        :class="{ active: activeView === tab.key }"
+        :title="tab.title"
+        @click="tab.run()"
+      >
+        <el-icon><component :is="tab.icon" :size="'0.875rem'" /></el-icon>
+        <!-- The bottom bar has room for labels; the left sidebar stays icon-only. -->
+        <span v-if="variant === 'bottom'" class="sidebar-tab-text">{{ tab.label }}</span>
+      </button>
       <button class="icon-btn" @click="emit('toggle')" :title="t('sidebar.collapse')"><el-icon><X :size="'0.875rem'" /></el-icon></button>
     </div>
 
@@ -405,6 +413,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch, nextTick, provide } from 'vue'
+import type { Component } from 'vue'
 import { X, ChevronRight, ChevronDown, Filter, Check, Network, Zap, Clock, Plus, Palette, SquareTerminal, Activity, Pencil, MoreHorizontal, FolderTree, ArrowRightLeft, Star } from '@lucide/vue'
 import { getShellLabel as getShellLabelBase } from '../utils/shellLabel'
 import { useConnectionStore } from '../stores/connectionStore'
@@ -437,17 +446,27 @@ import TypeFilterMenu from './TypeFilterMenu.vue'
 import RenameGroupDialog from './RenameGroupDialog.vue'
 import NewGroupDialog from './NewGroupDialog.vue'
 import DeleteGroupDialog from './DeleteGroupDialog.vue'
-import { FONT_OPTIONS, FONT_WEIGHT_OPTIONS, LANGUAGE_OPTIONS, FOLLOW_APP_THEME, SIDEBAR_TAB_DEFAULTS, SIDEBAR_TAB_ORDER } from '../types/settings'
+import { FONT_OPTIONS, FONT_WEIGHT_OPTIONS, LANGUAGE_OPTIONS, FOLLOW_APP_THEME, SIDEBAR_TAB_DEFAULTS, BOTTOM_BAR_TAB_DEFAULTS, SIDEBAR_TAB_ORDER } from '../types/settings'
 import { formatFontFamily, normalizeFontFamilyValue } from '../utils/formatFontFamily'
 import { useTerminalThemeOptions } from '../composables/useTerminalThemeOptions'
 import { GetAllFonts } from '../../bindings/github.com/ys-ll/uniterm/app'
 import { useLocalStateStore } from '../stores/localStateStore'
 import { formatKeyBinding } from '../composables/useKeyboardShortcuts'
 
-defineProps<{
+const props = withDefaults(defineProps<{
   visible: boolean
-}>()
-const emit = defineEmits(['connect', 'connectToWorkspace', 'createWorkspace', 'connectOnly', 'toggle'])
+  // Where this instance sits: the classic vertical left sidebar, or the bottom
+  // bar's panel area (full width, no width drag handle, labelled tabs). Both
+  // render the same view stack, they only differ in chrome.
+  variant?: 'left' | 'bottom'
+  // Which AppSettings visibility map drives the tab strip. The left sidebar and
+  // the bottom bar keep independent selections (sidebarTabs / bottomBarTabs).
+  tabsSetting?: 'sidebarTabs' | 'bottomBarTabs'
+}>(), {
+  variant: 'left',
+  tabsSetting: 'sidebarTabs',
+})
+const emit = defineEmits(['connect', 'connectToWorkspace', 'createWorkspace', 'connectOnly', 'toggle', 'viewChange'])
 const connectionStore = useConnectionStore()
 const favoriteStore = useFavoriteStore()
 const settingsStore = useSettingsStore()
@@ -510,13 +529,86 @@ watch(
   },
 )
 
+// ── Tab strip ──
+// One definition per view, rendered by the header in SIDEBAR_TAB_ORDER order.
+// "connections" is the primary view and is never gated by the visibility
+// setting; every other entry follows tabVisible(). The same list drives both
+// the left sidebar and the bottom bar, so a view can never be reachable in one
+// place but missing in the other.
+const tabDefs = computed(() => {
+  const defs: { key: string; icon: Component; label: string; title: string; run: () => void }[] = [
+    {
+      key: 'connections',
+      icon: Network,
+      label: t('header.connections'),
+      title: t('header.connections'),
+      run: () => { activeView.value = 'connections' },
+    },
+    {
+      key: 'files',
+      icon: FolderTree,
+      label: t('header.files'),
+      title: t('header.files'),
+      run: onFilesTabClick,
+    },
+    {
+      key: 'monitor',
+      icon: Activity,
+      label: t('header.monitor'),
+      title: t('header.monitor'),
+      run: onMonitorTabClick,
+    },
+    {
+      key: 'tunnels',
+      icon: ArrowRightLeft,
+      label: t('tunnels.tunnelsTab'),
+      title: t('tunnels.tunnelsTab'),
+      run: () => { activeView.value = 'tunnels' },
+    },
+    {
+      key: 'quickCommands',
+      icon: Zap,
+      label: t('quickCommands.quickCommandsTab'),
+      title: quickCommandsTitle.value,
+      run: () => { activeView.value = 'quickCommands' },
+    },
+    {
+      key: 'history',
+      icon: Clock,
+      label: t('quickCommands.historyTab'),
+      title: t('quickCommands.historyTab'),
+      run: () => { activeView.value = 'history' },
+    },
+    {
+      key: 'personalization',
+      icon: Palette,
+      label: t('sidebar.personalization'),
+      title: t('sidebar.personalization'),
+      run: () => { activeView.value = 'personalization' },
+    },
+  ]
+  return defs.filter(d => d.key === 'connections' || tabVisible(d.key))
+})
+
+// The bottom bar collapses down to its tab strip, so it needs to know when the
+// user picked a different view (clicking a tab expands the panel again).
+watch(activeView, v => emit('viewChange', v))
+
+// Unchecking the active view in Settings falls back to connections, so the
+// panel never renders a view that no longer has a tab.
+watch(tabDefs, defs => {
+  if (!defs.some(d => d.key === activeView.value)) activeView.value = 'connections'
+})
+
 // ── Sidebar tab visibility ──
 // Single source of truth is AppSettings.sidebarTabs (editable in Settings →
 // basic); right-clicking the tab strip opens the same toggles as a shortcut.
 // "connections" is the primary view and can never be hidden.
 
 function tabVisible(key: string): boolean {
-  return settingsStore.settings.sidebarTabs?.[key] ?? SIDEBAR_TAB_DEFAULTS[key] ?? true
+  const map = settingsStore.settings[props.tabsSetting]
+  const defaults = props.tabsSetting === 'bottomBarTabs' ? BOTTOM_BAR_TAB_DEFAULTS : SIDEBAR_TAB_DEFAULTS
+  return map?.[key] ?? defaults[key] ?? true
 }
 
 const tabStripMenuRef = ref<InstanceType<typeof Menu> | null>(null)
@@ -528,7 +620,7 @@ function onTabStripContextMenu(e: MouseEvent) {
 
 function onTabVisibilityClick(key: string) {
   if (key === 'connections') return // always visible
-  const tabs = settingsStore.settings.sidebarTabs
+  const tabs = settingsStore.settings[props.tabsSetting]
   tabs[key] = !tabVisible(key)
   settingsStore.save()
   // Hiding the view that's currently active falls back to connections.
@@ -1678,6 +1770,55 @@ defineExpose({ focusSearch, openQuickCommands, openChangeGroupFor, openChangeGro
   width: 0 !important;
   border-right: none;
   overflow: hidden;
+}
+
+/* ── Bottom-bar variant ──
+   The same view stack mounted inside the bottom bar: full width, no width drag
+   handle (the bar resizes vertically, see BottomBar.vue), and the tab strip
+   carries labels so the icons stay unambiguous in a wide row. */
+.sidebar.sidebar-bottom {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  border-right: none;
+  border-top: none;
+}
+
+.sidebar-bottom .sidebar-header {
+  gap: 0.25rem;
+  padding: 0.375rem 0.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+  /* Labelled tabs are wider than icon buttons: scroll the strip on narrow
+     windows instead of squeezing or wrapping it. */
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.sidebar-bottom .sidebar-header::-webkit-scrollbar {
+  height: 0;
+}
+
+.sidebar-bottom .sidebar-tab {
+  width: auto;
+  height: 1.625rem;
+  padding: 0 0.5rem;
+  gap: 0.3125rem;
+}
+
+.sidebar-bottom .sidebar-tab-text {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* A wide panel wastes space on a single full-width column of list rows; cap the
+   connection list to a comfortable reading width. */
+.sidebar-bottom .connection-list {
+  max-width: 46rem;
+  width: 100%;
 }
 
 .sidebar.resizing {
