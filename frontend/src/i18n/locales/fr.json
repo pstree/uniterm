@@ -329,6 +329,7 @@
   "sftp.hideFiles": "Hide files",
   "sftp.transferPanel.show": "Show transfers",
   "sftp.transferPanel.hide": "Hide transfers",
+  "sftp.transferPanel.title": "Transferts de fichiers",
   "sftp.fileProgress": "Files",
   "sftp.fileStatus.running": "transferring",
   "sftp.fileStatus.done": "done",
