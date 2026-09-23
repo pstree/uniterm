@@ -83,7 +83,7 @@
             @dragover.prevent="onFavDragOver($event, conn)"
             @drop.prevent="onFavDrop($event, conn)"
             @click="onItemClick($event, conn)"
-            @dblclick="onItemDblClick(conn)"
+            @dblclick="onItemDblClick(conn, $event)"
             @contextmenu.prevent="onContextMenu($event, conn)"
           >
             <span class="conn-icon"><component :is="connIcon(conn)" :size="'0.875rem'" /></span>
@@ -145,7 +145,7 @@
             @dragover.prevent="onConnDragOver($event, conn)"
             @drop.prevent="onConnDrop($event, conn)"
             @click="onItemClick($event, conn)"
-            @dblclick="onItemDblClick(conn)"
+            @dblclick="onItemDblClick(conn, $event)"
             @contextmenu.prevent="onContextMenu($event, conn)"
           >
             <span class="conn-icon"><component :is="connIcon(conn)" :size="'0.875rem'" /></span>
@@ -180,7 +180,7 @@
           @dragover.prevent="onConnDragOver($event, conn)"
           @drop.prevent="onConnDrop($event, conn)"
           @click="onItemClick($event, conn)"
-          @dblclick="onItemDblClick(conn)"
+          @dblclick="onItemDblClick(conn, $event)"
           @contextmenu.prevent="onContextMenu($event, conn)"
         >
           <span class="conn-icon"><component :is="connIcon(conn)" :size="'0.875rem'" /></span>
@@ -1280,7 +1280,10 @@ function onLocateConnection(e: Event) {
   if (typeof id === 'string') locateConnectionById(id)
 }
 
-function onItemDblClick(conn: ConnectionConfig) {
+function onItemDblClick(conn: ConnectionConfig, e?: MouseEvent) {
+  // A double-click on the row's own star / ⋯ buttons must not connect: those
+  // buttons stop `click` only, while `dblclick` still bubbles up to the row.
+  if ((e?.target as HTMLElement | null)?.closest('button')) return
   selectedIds.value = new Set()
   emit('connect', conn)
 }
@@ -1814,11 +1817,17 @@ defineExpose({ focusSearch, openQuickCommands, openChangeGroupFor, openChangeGro
   white-space: nowrap;
 }
 
-/* A wide panel wastes space on a single full-width column of list rows; cap the
-   connection list to a comfortable reading width. */
+/* Bottom bar: rows reach the panel edges so the hover / selection background
+   spans the full panel width — the list's side padding moves onto the rows
+   themselves, and the rounded corners make way for edge-to-edge bars. */
 .sidebar-bottom .connection-list {
-  max-width: 46rem;
-  width: 100%;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sidebar-bottom .connection-list .connection-item,
+.sidebar-bottom .connection-list > .group-header {
+  border-radius: 0;
 }
 
 .sidebar.resizing {
