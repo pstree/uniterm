@@ -309,12 +309,22 @@ export interface AppSettings {
 // context menu); every tab ships visible by default.
 export const SIDEBAR_TAB_DEFAULTS: Record<string, boolean> = {
   connections: true,
-  files: true,
-  monitor: true,
   tunnels: true,
+  files: false,
+  monitor: true,
+  quickCommands: false,
+  history: false,
+  personalization: false,
+}
+
+export const BOTTOM_TAB_DEFAULTS: Record<string, boolean> = {
+  connections: false,
+  tunnels: false,
+  files: true,
+  monitor: false,
   quickCommands: true,
   history: true,
-  personalization: true,
+  personalization: false,
 }
 
 // Default visibility per bottom-bar view. The bottom bar is a second, optional
@@ -322,7 +332,7 @@ export const SIDEBAR_TAB_DEFAULTS: Record<string, boolean> = {
 // row), so it mirrors the left sidebar's defaults: "connections" is fixed and
 // every other view ships visible.
 export const BOTTOM_BAR_TAB_DEFAULTS: Record<string, boolean> = {
-  ...SIDEBAR_TAB_DEFAULTS,
+  ...BOTTOM_TAB_DEFAULTS,
 }
 
 // Canonical sidebar tab order shared by the tab-strip context menu, the

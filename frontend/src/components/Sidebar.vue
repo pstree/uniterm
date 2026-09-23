@@ -339,11 +339,12 @@
     <CustomThemeEditor v-model="themeEditorVisible" :source-theme-id="themeEditorSourceId" />
 
     <!-- Tab-strip context menu: toggle which sidebar tabs are shown.
-         Reuses the same AppSettings.sidebarTabs as the Settings page card.
-         "connections" is fixed, so it is not listed. -->
+         Reuses the same AppSettings map as the Settings page card.
+         "connections" is fixed on the left sidebar (not listed there); the
+         bottom bar may toggle it like any other view. -->
     <Menu ref="tabStripMenuRef" v-model:visible="tabStripMenuVisible">
       <MenuItem
-        v-for="tab in SIDEBAR_TAB_ORDER.filter(tab => tab.key !== 'connections')"
+        v-for="tab in SIDEBAR_TAB_ORDER.filter(tab => tab.key !== 'connections' || tabsSetting === 'bottomBarTabs')"
         :key="tab.key"
         iconic
         :icon="tabVisible(tab.key) ? Check : undefined"
@@ -587,18 +588,25 @@ const tabDefs = computed(() => {
       run: () => { activeView.value = 'personalization' },
     },
   ]
-  return defs.filter(d => d.key === 'connections' || tabVisible(d.key))
+  // "connections" is the left sidebar's primary view and always visible there.
+  // The bottom bar may hide it (BOTTOM_TAB_DEFAULTS ships it off): the host can
+  // still reach connections via the left sidebar / header, so a bottom bar
+  // without the connections tab stays usable.
+  return defs.filter(d =>
+    (d.key === 'connections' && props.tabsSetting === 'sidebarTabs') || tabVisible(d.key))
 })
 
 // The bottom bar collapses down to its tab strip, so it needs to know when the
 // user picked a different view (clicking a tab expands the panel again).
 watch(activeView, v => emit('viewChange', v))
 
-// Unchecking the active view in Settings falls back to connections, so the
-// panel never renders a view that no longer has a tab.
+// Unchecking the active view falls back to the first still-visible tab, so the
+// panel never renders a view that no longer has a tab. Immediate: the bottom
+// bar may ship with connections hidden, so even the initial 'connections'
+// value has to be corrected to whatever tab is actually on the strip.
 watch(tabDefs, defs => {
-  if (!defs.some(d => d.key === activeView.value)) activeView.value = 'connections'
-})
+  if (!defs.some(d => d.key === activeView.value)) activeView.value = defs[0]?.key ?? 'connections'
+}, { immediate: true })
 
 // ── Sidebar tab visibility ──
 // Single source of truth is AppSettings.sidebarTabs (editable in Settings →

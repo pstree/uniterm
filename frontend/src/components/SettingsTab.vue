@@ -243,9 +243,10 @@
                 :collapse-tags-limit="3"
                 @change="onBottomBarTabsChange"
               >
-                <!-- Same view ids as the left sidebar; "connections" is fixed. -->
+                <!-- Same view ids as the left sidebar, plus "connections":
+                     the bottom bar may hide it (the left sidebar may not). -->
                 <el-option
-                  v-for="tab in SIDEBAR_TAB_ORDER.filter(tab => tab.key !== 'connections')"
+                  v-for="tab in SIDEBAR_TAB_ORDER"
                   :key="tab.key"
                   :label="t(tab.labelKey)"
                   :value="tab.key"
@@ -2223,14 +2224,15 @@ function onSidebarTabsChange() {
 // Same shape as the left sidebar card above: a multi-select over the view ids,
 // excluding the fixed "connections" view. Drives the bottom bar's own tab strip.
 const visibleBottomBarTabs = computed<string[]>({
+  // Unlike the left sidebar, "connections" participates here: the bottom bar
+  // may hide it (BOTTOM_TAB_DEFAULTS ships it off).
   get: () => SIDEBAR_TAB_ORDER
     .map(tab => tab.key)
-    .filter(key => key !== 'connections')
     .filter(key => settingsStore.settings.bottomBarTabs?.[key] ?? BOTTOM_BAR_TAB_DEFAULTS[key] ?? true),
   set: (keys: string[]) => {
     const tabs = settingsStore.settings.bottomBarTabs
     for (const tab of SIDEBAR_TAB_ORDER) {
-      tabs[tab.key] = tab.key === 'connections' || keys.includes(tab.key)
+      tabs[tab.key] = keys.includes(tab.key)
     }
   },
 })
